@@ -123,7 +123,7 @@ for id1 in test_id:
     print('test loss: ', ' MSE:%.4f' % loss)
 print('Mean test error: %.4f' % np.mean(np.array(loss_list)))
 
-agent = TreePolicy(state_dim=hidden_size , layer=3, branch=16, learning_rate=1e-4)
+agent = TreePolicy(state_dim=hidden_size, layer=3, branch=16, learning_rate=1e-4)
 
 
 def normalize(rating):
@@ -157,13 +157,17 @@ for id1 in train_id:
         state_list.append(feature_extractor.get_feature(temp_state, [current_state_length]).flatten())
         action_list.append(action[i])
         reward_list.append(normalize(rating[i]))  # normalization of the ratings to 0,1
-    discount = discount_factor ** np.arange(len(reward_list))
-    Q_value = np.cumsum(reward_list[::-1])
-    Q_value = Q_value[::-1] * discount
-    loss = agent.train(state_list, action_list, Q_value)
-    loss_list.append(loss)
-    train_step += 1
-    print('Step ', train_step, 'Loss: ', loss)
+        if len(state_list) % 32 is 0:
+            discount = discount_factor ** np.arange(len(reward_list))
+            Q_value = np.cumsum(reward_list[::-1])
+            Q_value = Q_value[::-1] * discount
+            loss = agent.train(state_list, action_list, Q_value)
+            loss_list.append(loss)
+            train_step += 1
+            print('Step ', train_step, 'Loss: ', loss)
+            state_list = []
+            action_list = []
+            reward_list = []
 
 print('Begin Test')
 test_count = 0

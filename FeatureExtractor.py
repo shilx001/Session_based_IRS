@@ -17,9 +17,9 @@ class FeatureExtractor:
         self.input_reward = tf.placeholder(dtype=tf.float32, shape=[None, ])
         # self.feature = self.create_model_v5(self.input_state, self.input_state_length)
         #self.feature = self.create_model(self.input_state, self.input_state_length)
-        self.feature = self.create_model_atem(self.input_state)
+        #self.feature = self.create_model_atem(self.input_state)
         #self.feature = self.create_model_caser(self.input_state, self.input_state_length)
-        #self.feature = self.create_model_v2(self.input_state, self.input_state_length)
+        self.feature = self.create_model_v4(self.input_state, self.input_state_length)
         #self.feature = self.create_model_v3(self.input_state, self.input_state_length)
         self.weight = tf.Variable(
             tf.random_normal(shape=[self.hidden_size, 1], stddev=0.3, dtype=tf.float32))  # 这个要注意改动,convLSTM要乘以2

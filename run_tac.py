@@ -163,14 +163,20 @@ for id1 in train_id:
         next_state_list.append(feature_extractor.get_feature(temp_next_state, [next_state_length]).flatten())
         action_list.append(action[i])
         reward_list.append(normalize(rating[i]))  # normalization of the ratings to 0,1
-        if i is len(state) - 1:
+        if i % 32 is 0:
             done_list.append(1.0)
         else:
             done_list.append(0.0)
-    loss = agent.train(state_list, action_list, reward_list, next_state_list, done_list)
-    loss_list.append(loss)
-    train_step += 1
-    print('Step ', train_step, 'Loss: ', loss)
+        if len(state_list) % 32 is 0:
+            loss = agent.train(state_list, action_list, reward_list, next_state_list, done_list)
+            loss_list.append(loss)
+            train_step += 1
+            print('Step ', train_step, 'Loss: ', loss)
+            state_list = []
+            action_list = []
+            reward_list = []
+            next_state_list = []
+            done_list = []
 
 print('Begin Test')
 test_count = 0
