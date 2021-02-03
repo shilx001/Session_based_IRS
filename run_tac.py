@@ -8,10 +8,10 @@ import datetime
 import matplotlib.pyplot as plt
 from funk_svd import SVD
 
-model_name = 'convLSTM'
+model_name = 'LSTM_attention'
 np.random.seed(1)
-data = pd.read_csv('ratings.csv', header=0, names=['u_id', 'i_id', 'rating', 'timestep'])
-# data = pd.read_table('ratings.dat', sep='::', names=['u_id', 'i_id', 'rating', 'timestep'])
+# data = pd.read_csv('ratings.csv', header=0, names=['u_id', 'i_id', 'rating', 'timestep'])
+data = pd.read_table('ratings.dat', sep='::', names=['u_id', 'i_id', 'rating', 'timestep'])
 user_idx = data['u_id'].unique()  # id for all the user
 np.random.shuffle(user_idx)
 train_id = user_idx[:int(len(user_idx) * 0.8)]
@@ -178,6 +178,8 @@ for id1 in train_id:
             next_state_list = []
             done_list = []
 
+pickle.dump(loss_list, open('train_loss_tac_' + model_name, 'wb'))
+
 print('Begin Test')
 test_count = 0
 result = []
@@ -250,7 +252,7 @@ for id1 in test_id:
           % (reward_30, precision_30, recall_30, mkk_30))
     result.append([reward_10, precision_10, recall_10, mkk_10, reward_30, precision_30, recall_30, mkk_30])
 
-pickle.dump(result, open('tpgr_' + model_name, mode='wb'))
+pickle.dump(result, open('tac_' + model_name, mode='wb'))
 print('result:')
 display = np.mean(np.array(result).reshape([-1, 8]), axis=0)
 for num in display:
