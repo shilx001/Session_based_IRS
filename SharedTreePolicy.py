@@ -21,14 +21,14 @@ class SharedTreePolicy:
         self.input_state = tf.placeholder(dtype=tf.float32, shape=[None, state_dim])
         self.input_action = tf.placeholder(dtype=tf.int32, shape=[None, ])
         self.input_reward = tf.placeholder(dtype=tf.float32, shape=[None, ])
-        self.output_action_prob = self.forward_pass_v2()
+        self.output_action_prob = self.forward_pass_v3()
         action_mask = tf.one_hot(self.input_action, self.branch ** self.layer)  # output the action of each node.
         prob_under_policy = tf.reduce_sum(self.output_action_prob * action_mask, axis=1)
         self.loss = -tf.reduce_mean(self.input_reward * tf.log(prob_under_policy + 1e-13), axis=0)
         self.train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
         self.sess.run(tf.global_variables_initializer())
 
-    def mlp(self, id=None):
+    def mlp(self, id=None, softmax_activation=True):
         '''
         Create a multi-layer neural network as tree node.
         :param id: tree node id
@@ -38,8 +38,11 @@ class SharedTreePolicy:
         with tf.variable_scope('node_' + str(id), reuse=tf.AUTO_REUSE):
             l1 = slim.fully_connected(self.input_state, self.hidden_size)
             l2 = slim.fully_connected(l1, self.hidden_size)
-            l3 = slim.fully_connected(l2, self.branch)
-            outputs = tf.nn.softmax(l3)
+            l3 = slim.fully_connected(l1, self.branch)
+            if softmax_activation:
+                outputs = tf.nn.softmax(l3)
+            else:
+                outputs = l3
         return outputs  # [N, branch]
 
     def forward_pass(self):
@@ -67,6 +70,38 @@ class SharedTreePolicy:
             current_output = []
             for j in range(self.branch ** i):  # for each leaf node
                 current_output.append(tf.expand_dims(root_output[:, j], axis=1) * node[i])
+            root_output = tf.concat(current_output, axis=1)  # [N, branch**i], update root_output.
+        return root_output
+
+    def forward_pass_v3(self):
+        '''
+        Partial shared layer parameter.
+        :return: a tensor of the tree policy.
+        '''
+        node = [self.mlp(id=str(_), softmax_activation=False) for _ in range(self.layer)]
+        root_output = node[0]
+        for i in range(1, self.layer):  # for each layer
+            current_output = []
+            for j in range(self.branch ** i):  # for each leaf node
+                current_node = slim.fully_connected(node[i], num_outputs=self.branch, activation_fn=tf.nn.relu)
+                current_node = slim.fully_connected(current_node, num_outputs=self.branch, activation_fn=tf.nn.softmax)
+                current_output.append(tf.expand_dims(root_output[:, j], axis=1) * current_node)
+            root_output = tf.concat(current_output, axis=1)  # [N, branch**i], update root_output.
+        return root_output
+
+    def forward_pass_v4(self):
+        '''
+        Calculate output probability for each item. shared policy with
+        :return: a tensor of the tree policy.
+        '''
+        node = self.mlp(id='node', softmax_activation=False)
+        root_output = node
+        for i in range(1, self.layer):  # for each layer
+            current_output = []
+            for j in range(self.branch ** i):  # for each leaf node
+                current_node = slim.fully_connected(node, num_outputs=self.branch, activation_fn=tf.nn.relu)
+                current_node = slim.fully_connected(current_node, num_outputs=self.branch, activation_fn=tf.nn.softmax)
+                current_output.append(tf.expand_dims(root_output[:, j], axis=1) * current_node)
             root_output = tf.concat(current_output, axis=1)  # [N, branch**i], update root_output.
         return root_output
 
