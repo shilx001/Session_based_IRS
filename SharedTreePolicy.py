@@ -37,7 +37,7 @@ class SharedTreePolicy:
         '''
         with tf.variable_scope('node_' + str(id), reuse=tf.AUTO_REUSE):
             l1 = slim.fully_connected(self.input_state, self.hidden_size)
-            l2 = slim.fully_connected(l1, self.hidden_size)
+            #l2 = slim.fully_connected(l1, self.hidden_size)
             l3 = slim.fully_connected(l1, self.branch)
             if softmax_activation:
                 outputs = tf.nn.softmax(l3)
